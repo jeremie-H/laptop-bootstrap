@@ -1,0 +1,80 @@
+# NOTE: The below 2 variables should not need to be changed if you cloned
+#   the dotfiles repo to '~/dotfiles'
+#  Local home directory
+dotfiles_user_home: "{{ '~' | expanduser }}"
+# Where your dotfiles live. Probably don't need to change this.
+dotfiles_home: "{{dotfiles_user_home}}/dotfiles"
+
+pc_portable: true
+
+######################### ZSH ######################
+# Important: oh-my-zsh is installed per user so you need to specify the users to install it for.
+users:
+  - username: "{{ ansible_user }}"
+    oh_my_zsh:
+      theme: powerlevel10k/powerlevel10k
+      plugins:
+        - git
+        - docker
+        - docker-compose
+        - mvn
+        - alias-tips
+        - zsh-autosuggestions
+        - zsh-syntax-highlighting
+        - cargo
+
+# Name used in commit messages
+full_name: Jérémie
+# Git
+# Gitlab username
+git_user: je-h
+# If you use gitlab, this should be the same as the email used on Gitlab
+git_email: 2455383-je-h@users.noreply.gitlab.com
+
+apt_packages:
+  # fontconfig permet d'exécuter la commande fc-cache pour reset le cache des fonts
+#  - fontconfig
+#  - python-apt
+#  - ansible
+  - curl
+#  - docker
+#  - vlc
+  - chromium
+  - keepassxc
+#  - clementine
+#  - telegram-desktop
+#  - p7zip-full
+#  - p7zip-rar
+  - jq
+  - zsh
+  - git
+#  - transmission
+#  - flac
+# gestion carte SD > 32Go
+#  - exfat-fuse
+#  - exfat-utils
+#  - darktable
+#  - ocl-icd-libopencl1
+#  - vim
+#  - maven
+#  - locate
+#  - fonts-powerline
+#  - python3-dev
+#  - python3-pip
+  - meld
+#  - golang-go
+  # afin de bénéficier de mount.nfs pour accéder à burns
+#  - nfs-common
+##### GNOME
+  - gnome-shell-extension-dashtodock
+  - gnome-shell-extension-appindicator
+
+#apt_packages_to_remove:
+#  - vim.tiny
+  
+#snap_packages:
+#  - code
+#  - slack
+#  - spotify
+#  - intellij-idea-ultimate
+#  - teams-for-linux
