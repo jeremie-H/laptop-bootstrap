@@ -2,7 +2,7 @@
 
 # need sudo permissions
 [ $(id -u) -eq 0 ] || printf "check for sudo permissions ..."
-[ $(id -u) -eq 0 ] || printf "error: execute with sudo permission" && exit 1
+[ $(id -u) -eq 0 ] || exec sudo /bin/bash -c "$(printf '%q ' "$BASH_SOURCE" "$USER" "$@")"
 printf "\e[32m OK \e[0m!\n"
 
 USER_NO_ADMIN="$1"
