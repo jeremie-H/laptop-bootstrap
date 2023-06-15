@@ -2,14 +2,17 @@
   become: true
   #become_method: enable
   roles:
-    - { role: gnome , tags: gnome }
-    #- { role: oh-my-zsh , tags: oh-my-zsh }
+    #- { role: apt , tags: apt }
+    #- { role: gnome , tags: gnome }
+    - { role: oh-my-zsh , tags: oh-my-zsh }
+    - { role: swap , tags: swap }
+    - { role: tools-developer , tags: tools-developer }
 #    - { role: docker , tags: docker }
-#    - { role: swap , tags: swap }
+
 
 #    - { role: git , tags: git }
 #    - { role: syncthing , tags: syncthing }
-#    - { role: tools-developer , tags: tools-developer }
+
 
 #    - { role: ubuntu , tags: ubuntu }
 

@@ -1,18 +1,17 @@
 ---
 - name: Create the directory \"outils\" if it does not exist
   become: yes
-  become_user: "{{ item.username }}"
+  become_user: "{{ unix_user }}"
   ansible.builtin.file:
-    path: /home/{{ item.username }}/outils
+    path: "{{ user_path }}/outils"
     state: directory
     mode: '0750'
-  with_items: '{{ users }}'
 
 - name: Ensure we have all envvars in .ansible.zsh
   become: yes
-  become_user: "{{ item.username }}"
+  become_user: "{{ unix_user }}"
   blockinfile:
-    path: /home/{{ item.username }}/.ansible.zsh
+    path: "{{ user_path }}/.ansible.zsh"
     marker: "################# {mark} ANSIBLE MANAGED #################"
     create: true
     block: |
@@ -46,71 +45,63 @@
       alias pv="fzf --preview 'bat --color=always {}'"
       # add support for ctrl+o to open selected file in VS Code
       export FZF_DEFAULT_OPTS="--bind='ctrl-o:execute(code {})+abort'"
-  with_items: '{{ users }}'
 
 
 ## Install Volta manager for NodeJS
 - name: Download Volta installer for NodeJS installation management
   become: yes
-  become_user: "{{ item.username }}"
+  become_user: "{{ unix_user }}"
   get_url:
     url: https://get.volta.sh
     dest: /tmp/volta-installer.sh
     mode: 0755
-  with_items: '{{ users }}'
 
 - name: Execute volta.sh
   become: yes
-  become_user: "{{ item.username }}"
+  become_user: "{{ unix_user }}"
   shell: ./volta-installer.sh --skip-setup
   args:
     chdir: /tmp/
-    creates: /home/{{ item.username }}/.volta
-  with_items: '{{ users }}'
+    creates: "{{ user_path }}/.volta"
 
 - name: volta completions
   become: yes
-  become_user: "{{ item.username }}"
-  shell: ./volta completions zsh > /home/{{ item.username }}/.oh-my-zsh/completions/_volta
+  become_user: "{{ unix_user }}"
+  shell: ./volta completions zsh > {{ user_path }}/.oh-my-zsh/completions/_volta
   args:
-    chdir: /home/{{ item.username }}/.volta/bin
-    creates: /home/{{ item.username }}/.oh-my-zsh/completions/_volta
-  with_items: '{{ users }}'
+    chdir: "{{ user_path }}/.volta/bin"
+    creates: "{{ user_path }}/.oh-my-zsh/completions/_volta"
 
 - name: volta reset zsh completion
   become: yes
-  become_user: "{{ item.username }}"
-  shell: rm /home/{{ item.username }}/.zcompdump*
+  become_user: "{{ unix_user }}"
+  shell: rm "{{ user_path }}/.zcompdump*"
+  failed_when: false
   args:
-    warn: false
-    chdir: /home/{{ item.username }}/.volta/bin
-    removes: /home/{{ item.username }}/.zcompdump*
-  with_items: '{{ users }}'
+    chdir: "{{ user_path }}/.volta/bin"
+    removes: "{{ user_path }}/.zcompdump*"
 
 - name: Install a NodeJS LTS with Volta
   become: yes
-  become_user: "{{ item.username }}"
+  become_user: "{{ unix_user }}"
   shell: ./volta install node
   args:
-    chdir: /home/{{ item.username }}/.volta/bin
-    creates: /home/{{ item.username }}/.volta/tools/inventory/node/node*
-  with_items: '{{ users }}'
+    chdir: "{{ user_path }}/.volta/bin"
+    creates: "{{ user_path }}/.volta/tools/inventory/node/node*"
 
 - name: Clone fzf repository
-  become_user: "{{ item.username }}"
+  become_user: "{{ unix_user }}"
   git:
     repo: https://github.com/junegunn/fzf.git
-    dest: "/home/{{ item.username }}/outils/fzf"
+    dest: "{{ user_path }}/outils/fzf"
     depth: 1
   register: cloning_fzf
-  with_items: '{{ users }}'
 
 - name: Install fzf
-  become_user: "{{ item.username }}"
+  become_user: "{{ unix_user }}"
   # like ./install all but without modifying .zshrc
   shell: ./install --completion --key-bindings --no-bash --no-fish --no-update-rc
   args:
-    chdir: /home/{{ item.username }}/outils/fzf
-    creates: /home/{{ item.username }}/.fzf.zsh
+    chdir: "{{ user_path }}/outils/fzf"
+    creates: "{{ user_path }}/.fzf.zsh"
   when: cloning_fzf is success
-  with_items: '{{ users }}'

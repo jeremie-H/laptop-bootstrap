@@ -2,68 +2,64 @@
 - name: Installing Zsh and git
   run_once: true
   apt:
-    name: "zsh,git"
+    pkg:
+      - zsh
+      - git
     state: latest
     force_apt_get: yes # should be fixed in future to remove "[WARNING]: Could not find aptitude. Using apt-get instead" 
   register: installation
 
 - name: "write first ~/.zshrc for if it doesnt exist"
   become: yes
-  become_user: '{{ item.username }}'
+  become_user: "{{ unix_user }}"
   template:
     src: zshrc.j2
-    dest: '~{{ item.username }}/.zshrc'
+    dest: '{{ user_path }}/.zshrc'
     backup: yes
     force: no
     mode: 'u=rw,go=r'
-  with_items: '{{ users }}'
 
-- name: Cloning  oh-my-zsh
+- name: Cloning oh-my-zsh
   become: yes
-  become_user: "{{ item.username }}"
+  become_user: "{{ unix_user }}"
   git:
     repo: https://github.com/robbyrussell/oh-my-zsh
-    dest: "/home/{{ item.username }}/.oh-my-zsh"
+    dest: "{{ user_path }}/.oh-my-zsh"
   when: installation is success
   register: cloning_zsh
-  with_items: '{{ users }}'
 
 - name: Plugin zsh alias-tips
   become: yes
-  become_user: "{{item.username}}"
+  become_user: "{{ unix_user }}"
   git:
     repo: https://github.com/djui/alias-tips
-    dest: "/home/{{ item.username }}/.oh-my-zsh/custom/plugins/alias-tips"
+    dest: "{{ user_path }}/.oh-my-zsh/custom/plugins/alias-tips"
   when: cloning_zsh is success
-  with_items: '{{ users }}'
 
 - name: Plugin zsh zsh-autosuggestions
   become: yes
-  become_user: "{{item.username}}"
+  become_user: "{{ unix_user }}"
   git:
     repo: https://github.com/zsh-users/zsh-autosuggestions
-    dest: "/home/{{ item.username }}/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+    dest: "{{ user_path }}/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
   when: cloning_zsh is success
-  with_items: '{{ users }}'
   
 
 - name: Plugin zsh zsh-syntax-highlighting
   become: yes
-  become_user: "{{item.username}}"
+  become_user: "{{ unix_user }}"
   git:
     repo: https://github.com/zsh-users/zsh-syntax-highlighting
-    dest: "/home/{{ item.username }}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+    dest: "{{ user_path }}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
   when: cloning_zsh is success
-  with_items: '{{ users }}'
 
 - name: Plugin zsh powerlevel10k
   become: yes
-  become_user: "{{ item.username }}"
+  become_user: "{{ unix_user }}"
   git:
     repo: https://github.com/romkatv/powerlevel10k
-    dest: "/home/{{ item.username }}/.oh-my-zsh/custom/themes/powerlevel10k"
+    dest: "{{ user_path }}/.oh-my-zsh/custom/themes/powerlevel10k"
   when: cloning_zsh is success
-  with_items: '{{ users }}'
 
 - name: Make sure /usr/local/share/fonts/MesloLGSNF directory exists
   run_once: true
@@ -86,9 +82,10 @@
 
 - name: update font-cache
   become: yes
-  become_user: "{{ item.username }}"
+  become_user: "{{ unix_user }}"
   command: fc-cache -fv
-  with_items: '{{ users }}'
+
+## gnome-terminal
 
 # impossible de récupérer la valeur de /org/gnome/terminal/legacy/profiles:/default avec dconf
 # on utilise alors gsettings (mystère de gnome)
@@ -98,7 +95,6 @@
   command: "gsettings get org.gnome.Terminal.ProfilesList default"
   register: default_gnome_terminal_profile_id
   when: gnome_active is defined and gnome_active
-
 
 # strip simple quote from previous result, like 'b1dcc9dd-5262-4d8d-a863-c897e6d979b9'
 - name: "strip quote from variable default_gnome_terminal_profile_id"
@@ -126,41 +122,40 @@
     state: present
   when: gnome_active is defined and gnome_active
 
+## TODO : define default color
+
+
 # - name: Create a symbolic link to p10.zsh in syncthing
 #   become: yes
-#   become_user: "{{ item.username }}"
+#   become_user: "{{ unix_user }}"
 #   ansible.builtin.file:
-#     src: /home/{{ item.username }}/syncthing/config-files/dotfiles/p10.zsh
-#     dest: /home/{{ item.username }}/.p10.zsh
+#     src: "{{ user_path }}/syncthing/config-files/dotfiles/p10.zsh"
+#     dest: "{{ user_path }}/.p10.zsh"
 #     state: link
-#   with_items: '{{ users }}'
 
 
 # - name: Install nerd-fonts
 #  become: yes
-#  become_user: "{{item.username}}"
+#  become_user: "{{ unix_user }}"
 #  git:
 #    repo: https://github.com/ryanoasis/nerd-fonts.git
 #    dest: "/tmp/nerd-fonts"
 #    depth: 1
 #  when: cloning_zsh is success
-#  with_items: '{{ users }}'
   
 #MesloLGL Nerd Font Mono Regular to install
 
 - name: Make sure user use zsh by default
   become: yes
-  with_items: '{{ users }}'
   user:
-    name: "{{ item.username }}"
+    name: "{{ unix_user }}"
     shell: /usr/bin/zsh
 
 ## For ZSH completions
 - name: Create the directory \"$ZSH/completions\" if it does not exist
   become: yes
-  become_user: "{{ item.username }}"
+  become_user: "{{ unix_user }}"
   ansible.builtin.file:
-    path: /home/{{ item.username }}/.oh-my-zsh/completions
+    path: "{{ user_path }}/.oh-my-zsh/completions"
     state: directory
     mode: '0750'
-  with_items: '{{ users }}'

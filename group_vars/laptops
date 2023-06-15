@@ -6,10 +6,11 @@ dotfiles_user_home: "{{ '~' | expanduser }}"
 dotfiles_home: "{{dotfiles_user_home}}/dotfiles"
 
 pc_portable: true
+gnome_active: true
 
 ######################### ZSH ######################
 # Important: oh-my-zsh is installed per user so you need to specify the users to install it for.
-users:
+users: # TODO : to delete
   - username: "{{ ansible_user }}"
     oh_my_zsh:
       theme: powerlevel10k/powerlevel10k
@@ -65,9 +66,7 @@ apt_packages:
 #  - golang-go
   # afin de bénéficier de mount.nfs pour accéder à burns
 #  - nfs-common
-##### GNOME
-  - gnome-shell-extension-dashtodock
-  - gnome-shell-extension-appindicator
+
 
 #apt_packages_to_remove:
 #  - vim.tiny

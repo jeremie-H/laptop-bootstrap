@@ -38,8 +38,9 @@ function clone_repo() {
   sudo -u "$USER_NO_ADMIN" git -C "$ROOT_GIT_REPO" clone --quiet https://github.com/jeremie-H/laptop-bootstrap.git "$REPO_PATH" > /dev/null
 }
 
-#install_git_ansible
-#clone_repo
+# install_git_ansible
+# clone_repo
+REPO_PATH='.'
 
 cd $REPO_PATH
 sudo -u "$USER_NO_ADMIN" whoami
