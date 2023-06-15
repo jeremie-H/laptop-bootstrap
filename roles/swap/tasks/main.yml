@@ -1,0 +1,27 @@
+---
+  - name: write swappiness config file
+    become: yes
+    action: template src=templates/swappiness.conf.j2 dest=/etc/sysctl.d/99-swappiness.conf mode=0644
+
+  - name: get swappiness value
+    become: yes
+    command: cat /proc/sys/vm/swappiness
+    register: actual_swappiness
+    changed_when: False # seulement pour éviter d'afficher tout le temps le changed: [localhost] alors que rien n'est modifié
+  
+  #- name: Set/Apply sysctl settings in hosts_vars/.yml
+  #  sysctl:
+  #    name: vm.swappiness
+  #    value: "{{ swappiness }}"
+  #    state: present
+  #  notify:
+  #    - swapoff
+  #    - swapon
+
+  - name: set swappiness value to {{ swappiness }}
+    become: yes
+    action: command "sysctl" "vm.swappiness={{ swappiness }}"
+    when: actual_swappiness.stdout|int != swappiness|int
+    notify:
+      - swapoff
+      - swapon

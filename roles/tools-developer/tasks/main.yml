@@ -1,0 +1,116 @@
+---
+- name: Create the directory \"outils\" if it does not exist
+  become: yes
+  become_user: "{{ item.username }}"
+  ansible.builtin.file:
+    path: /home/{{ item.username }}/outils
+    state: directory
+    mode: '0750'
+  with_items: '{{ users }}'
+
+- name: Ensure we have all envvars in .ansible.zsh
+  become: yes
+  become_user: "{{ item.username }}"
+  blockinfile:
+    path: /home/{{ item.username }}/.ansible.zsh
+    marker: "################# {mark} ANSIBLE MANAGED #################"
+    create: true
+    block: |
+      # See http://www.shellperson.net/using-sudo-with-an-alias/
+      alias sudo='sudo '
+      alias watch='watch '
+      
+      #monitor docker containers
+      alias dockstats='docker ps | awk '\''{print $NF}'\'' | grep -v NAMES |xargs docker stats'
+      
+      #dusort est utilisable uniquement sur zsh
+      alias dusort="du -sch *(D) | sort -h"
+      alias dusort2="du -chd2 *(D) | sort -h"
+      alias dusort3="du -chd3 *(D) | sort -h"
+
+      # Volta is used to manage nodeJS installation
+      export VOLTA_HOME="$HOME/.volta"
+      export PATH="$VOLTA_HOME/bin:$PATH"
+      
+      # aliases for git push without starting CICD on gitlab
+      alias gprse='git push -o "ci.skip"'
+      alias gpfrse='git push --force-with-lease -o "ci.skip"'
+
+      # alias for debugging with kubernetes
+      alias kdebug='kubectl exec -it debuggery -- zsh || kubectl run --rm -it debuggery --image=rameezk/debuggery --restart=Never'
+      alias k="kubectl "
+
+      # fzf installation
+      [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+      alias preview="fzf --preview 'bat --color=always {}'"
+      alias pv="fzf --preview 'bat --color=always {}'"
+      # add support for ctrl+o to open selected file in VS Code
+      export FZF_DEFAULT_OPTS="--bind='ctrl-o:execute(code {})+abort'"
+  with_items: '{{ users }}'
+
+
+## Install Volta manager for NodeJS
+- name: Download Volta installer for NodeJS installation management
+  become: yes
+  become_user: "{{ item.username }}"
+  get_url:
+    url: https://get.volta.sh
+    dest: /tmp/volta-installer.sh
+    mode: 0755
+  with_items: '{{ users }}'
+
+- name: Execute volta.sh
+  become: yes
+  become_user: "{{ item.username }}"
+  shell: ./volta-installer.sh --skip-setup
+  args:
+    chdir: /tmp/
+    creates: /home/{{ item.username }}/.volta
+  with_items: '{{ users }}'
+
+- name: volta completions
+  become: yes
+  become_user: "{{ item.username }}"
+  shell: ./volta completions zsh > /home/{{ item.username }}/.oh-my-zsh/completions/_volta
+  args:
+    chdir: /home/{{ item.username }}/.volta/bin
+    creates: /home/{{ item.username }}/.oh-my-zsh/completions/_volta
+  with_items: '{{ users }}'
+
+- name: volta reset zsh completion
+  become: yes
+  become_user: "{{ item.username }}"
+  shell: rm /home/{{ item.username }}/.zcompdump*
+  args:
+    warn: false
+    chdir: /home/{{ item.username }}/.volta/bin
+    removes: /home/{{ item.username }}/.zcompdump*
+  with_items: '{{ users }}'
+
+- name: Install a NodeJS LTS with Volta
+  become: yes
+  become_user: "{{ item.username }}"
+  shell: ./volta install node
+  args:
+    chdir: /home/{{ item.username }}/.volta/bin
+    creates: /home/{{ item.username }}/.volta/tools/inventory/node/node*
+  with_items: '{{ users }}'
+
+- name: Clone fzf repository
+  become_user: "{{ item.username }}"
+  git:
+    repo: https://github.com/junegunn/fzf.git
+    dest: "/home/{{ item.username }}/outils/fzf"
+    depth: 1
+  register: cloning_fzf
+  with_items: '{{ users }}'
+
+- name: Install fzf
+  become_user: "{{ item.username }}"
+  # like ./install all but without modifying .zshrc
+  shell: ./install --completion --key-bindings --no-bash --no-fish --no-update-rc
+  args:
+    chdir: /home/{{ item.username }}/outils/fzf
+    creates: /home/{{ item.username }}/.fzf.zsh
+  when: cloning_fzf is success
+  with_items: '{{ users }}'

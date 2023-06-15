@@ -1,0 +1,166 @@
+---
+- name: Installing Zsh and git
+  run_once: true
+  apt:
+    name: "zsh,git"
+    state: latest
+    force_apt_get: yes # should be fixed in future to remove "[WARNING]: Could not find aptitude. Using apt-get instead" 
+  register: installation
+
+- name: "write first ~/.zshrc for if it doesnt exist"
+  become: yes
+  become_user: '{{ item.username }}'
+  template:
+    src: zshrc.j2
+    dest: '~{{ item.username }}/.zshrc'
+    backup: yes
+    force: no
+    mode: 'u=rw,go=r'
+  with_items: '{{ users }}'
+
+- name: Cloning  oh-my-zsh
+  become: yes
+  become_user: "{{ item.username }}"
+  git:
+    repo: https://github.com/robbyrussell/oh-my-zsh
+    dest: "/home/{{ item.username }}/.oh-my-zsh"
+  when: installation is success
+  register: cloning_zsh
+  with_items: '{{ users }}'
+
+- name: Plugin zsh alias-tips
+  become: yes
+  become_user: "{{item.username}}"
+  git:
+    repo: https://github.com/djui/alias-tips
+    dest: "/home/{{ item.username }}/.oh-my-zsh/custom/plugins/alias-tips"
+  when: cloning_zsh is success
+  with_items: '{{ users }}'
+
+- name: Plugin zsh zsh-autosuggestions
+  become: yes
+  become_user: "{{item.username}}"
+  git:
+    repo: https://github.com/zsh-users/zsh-autosuggestions
+    dest: "/home/{{ item.username }}/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
+  when: cloning_zsh is success
+  with_items: '{{ users }}'
+  
+
+- name: Plugin zsh zsh-syntax-highlighting
+  become: yes
+  become_user: "{{item.username}}"
+  git:
+    repo: https://github.com/zsh-users/zsh-syntax-highlighting
+    dest: "/home/{{ item.username }}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
+  when: cloning_zsh is success
+  with_items: '{{ users }}'
+
+- name: Plugin zsh powerlevel10k
+  become: yes
+  become_user: "{{ item.username }}"
+  git:
+    repo: https://github.com/romkatv/powerlevel10k
+    dest: "/home/{{ item.username }}/.oh-my-zsh/custom/themes/powerlevel10k"
+  when: cloning_zsh is success
+  with_items: '{{ users }}'
+
+- name: Make sure /usr/local/share/fonts/MesloLGSNF directory exists
+  run_once: true
+  file:
+    path: "/usr/local/share/fonts/MesloLGSNF"
+    state: directory
+
+# this task is following the example given in the FiraCode wiki/README
+- name: "Download MesloLGS NF font files"
+  run_once: true
+  get_url:
+    url: "https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20{{ item | urlencode }}.ttf"
+    dest: "/usr/local/share/fonts/MesloLGSNF/MesloLGS NF {{ item }}.ttf"
+    mode: u=rw,go=r
+  with_items:
+    - Regular
+    - Bold
+    - Italic
+    - Bold Italic
+
+- name: update font-cache
+  become: yes
+  become_user: "{{ item.username }}"
+  command: fc-cache -fv
+  with_items: '{{ users }}'
+
+# impossible de récupérer la valeur de /org/gnome/terminal/legacy/profiles:/default avec dconf
+# on utilise alors gsettings (mystère de gnome)
+- name: "[gsettings] retrieve Default profile ID in Gnome Terminal"
+  become: yes
+  become_user: "{{ unix_user }}"
+  command: "gsettings get org.gnome.Terminal.ProfilesList default"
+  register: default_gnome_terminal_profile_id
+  when: gnome_active is defined and gnome_active
+
+
+# strip simple quote from previous result, like 'b1dcc9dd-5262-4d8d-a863-c897e6d979b9'
+- name: "strip quote from variable default_gnome_terminal_profile_id"
+  set_fact:
+    UUID: "{{ default_gnome_terminal_profile_id.stdout[1:-1] }}"
+  when: gnome_active is defined and gnome_active
+
+# activate custom font for Gnome Terminal
+- name: "[dconf] set Gnome Terminal custom font available"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/terminal/legacy/profiles:/:{{ UUID }}/use-system-font"
+    value: "false"
+    state: present
+  when: gnome_active is defined and gnome_active
+
+# set MesloLGS NF 12
+- name: "[dconf] change Gnome Terminal default font"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/terminal/legacy/profiles:/:{{ UUID }}/font"
+    value: "'MesloLGS NF 12'"
+    state: present
+  when: gnome_active is defined and gnome_active
+
+# - name: Create a symbolic link to p10.zsh in syncthing
+#   become: yes
+#   become_user: "{{ item.username }}"
+#   ansible.builtin.file:
+#     src: /home/{{ item.username }}/syncthing/config-files/dotfiles/p10.zsh
+#     dest: /home/{{ item.username }}/.p10.zsh
+#     state: link
+#   with_items: '{{ users }}'
+
+
+# - name: Install nerd-fonts
+#  become: yes
+#  become_user: "{{item.username}}"
+#  git:
+#    repo: https://github.com/ryanoasis/nerd-fonts.git
+#    dest: "/tmp/nerd-fonts"
+#    depth: 1
+#  when: cloning_zsh is success
+#  with_items: '{{ users }}'
+  
+#MesloLGL Nerd Font Mono Regular to install
+
+- name: Make sure user use zsh by default
+  become: yes
+  with_items: '{{ users }}'
+  user:
+    name: "{{ item.username }}"
+    shell: /usr/bin/zsh
+
+## For ZSH completions
+- name: Create the directory \"$ZSH/completions\" if it does not exist
+  become: yes
+  become_user: "{{ item.username }}"
+  ansible.builtin.file:
+    path: /home/{{ item.username }}/.oh-my-zsh/completions
+    state: directory
+    mode: '0750'
+  with_items: '{{ users }}'

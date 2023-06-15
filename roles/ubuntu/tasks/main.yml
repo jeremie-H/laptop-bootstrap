@@ -1,0 +1,157 @@
+---
+
+# - name: Remove useless snap packages
+#   become: yes
+#   snap:
+#     name:
+#       - gnome-characters
+#       - gnome-calculator
+#       - gnome-system-monitor
+#       - gnome-logs
+#     state: absent
+
+# - name: Reinstall replacement for snap packages
+#   become: yes
+#   apt:
+#     name: ['gnome-characters', 'gnome-calculator', 'gnome-system-monitor', 'gnome-logs']
+#     update_cache: yes
+#     force_apt_get: yes # should be fixed in future to remove "[WARNING]: Could not find aptitude. Using apt-get instead" 
+#     cache_valid_time: 3600 #only run if the last one is more than 1 hour
+
+- name: Run the equivalent of "apt-get update" and install all packages dependances
+  become: yes
+  # throttle à 1 pour éviter d'exécuter en parallèle une tâche apt qui cré un lock (exécution avec 2 users différents par exemple)
+  run_once: true
+  apt:
+    name: "{{ apt_packages }}"
+    update_cache: yes
+    force_apt_get: yes # should be fixed in future to remove "[WARNING]: Could not find aptitude. Using apt-get instead" 
+    cache_valid_time: 3600 #only run if the last one is more than 1 hour
+
+- name: Remove a list of apt packages
+  become: yes
+  run_once: true
+  apt:
+    name: "{{ apt_packages_to_remove }}"
+    force_apt_get: yes # should be fixed in future to remove "[WARNING]: Could not find aptitude. Using apt-get instead" 
+    state: absent
+
+- name: Upgrade all packages to the latest version
+  become: yes
+  run_once: true
+  apt:
+    name: "*"
+    state: latest
+    force_apt_get: yes # should be fixed in future to remove "[WARNING]: Could not find aptitude. Using apt-get instead" 
+    cache_valid_time: 3600 #only run if the last one is more than 1 hour
+
+- name: Run the `apt autoremove autoclean`
+  become: yes
+  run_once: true
+  apt:
+    force_apt_get: yes # should be fixed in future to remove "[WARNING]: Could not find aptitude. Using apt-get instead" 
+    autoremove: yes
+    autoclean: yes
+
+- name: Install snap packages
+  become: yes
+  run_once: true
+  when: (snap_packages is defined) and (snap_packages[0] is defined)
+  snap:
+    name: "{{ snap_packages }}"
+    state: present
+    #attention, avec le mode classic : yes, on ne peut pas mettre une liste de package
+    classic: yes
+
+- name: Remove snap packages
+  become: yes
+  run_once: true
+  when: (snap_packages_to_remove is defined) and (snap_packages_to_remove[0] is defined)
+  snap:
+    name: "{{ snap_packages_to_remove }}"
+    state: absent
+    #attention, avec le mode classic : yes, on ne peut pas mettre une liste de package
+    classic: yes
+
+
+- name: Install TheFuck and psutil
+  become: yes
+  run_once: true
+  pip:
+    name:
+#      - thefuck
+      - psutil
+
+- name: "[dconf] pourcentage batterie"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/desktop/interface/show-battery-percentage"
+    value: "true"
+    state: present
+  when: pc_portable is defined and pc_portable
+
+- name: "[dconf] workspace sur tous les écrans"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/mutter/workspaces-only-on-primary"
+    value: "false"
+    state: present
+
+- name: "[dconf] hot corner activé"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/desktop/interface/enable-hot-corners"
+    value: "true"
+    state: present
+
+- name: "[dconf] cacher la corbeille sur le bureau"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/desktop-icons/show-trash"
+    value: "false"
+    state: present
+
+- name: "[dconf] cacher le home sur le bureau"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/desktop-icons/show-home"
+    value: "false"
+    state: present
+
+- name: "[dconf] masquer automatiquement le Dock (si recouvert)"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/dash-to-dock/dock-fixed"
+    value: "true"
+    state: present
+
+- name: "[dconf] Dock sur tous les écrans"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/dash-to-dock/multi-monitor"
+    value: "true"
+    state: present
+
+- name: "[dconf] Applications isolées sur les workspaces"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/dash-to-dock/isolate-workspaces"
+    value: "true"
+    state: present
+
+- name: "[dconf] switch alt+² isolé sur les workspaces"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/app-switcher/current-workspace-only"
+    value: "true"
+    state: present
+

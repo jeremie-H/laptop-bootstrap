@@ -1,0 +1,86 @@
+---
+- name: Ensure the system can use the HTTPS transport for APT
+  run_once: true
+  stat:
+    path: /usr/lib/apt/methods/https
+  register: apt_https_transport
+
+- name: Install HTTPS transport for APT
+  run_once: true
+  apt:
+    pkg: apt-transport-https
+    state: present
+  when: not apt_https_transport.stat.exists
+  register: result
+  until: result is succeeded
+
+- name: Import Syncthing GPG key to apt
+  run_once: true
+  apt_key:
+    url: "{{ syncthing_apt_key_url }}"
+    state: present
+  register: result
+  until: result is succeeded
+
+- name: Add Syncthing repository
+  run_once: true
+  apt_repository:
+    repo: 'deb {{ syncthing_apt_repository_url }} syncthing stable'
+    state: present
+
+- name: Install Syncthing from Syncthing repository
+  run_once: true
+  apt:
+    pkg: "{{ syncthing_package }}"
+    state: present
+  register: result
+  until: result is succeeded
+
+# - name: Install ufw Syncthing rules
+#   run_once: true
+#   copy:
+#     src: ufw-syncthing
+#     dest: /etc/ufw/applications.d/syncthing
+#     owner: root
+#     mode: 0644
+#   when: syncthing_use_ufw
+
+# - name: Allow Syncthing ufw
+#   run_once: true
+#   ufw: rule=allow name=syncthing
+#   when: syncthing_use_ufw
+
+- name: Create syncthing service
+  become: yes
+  run_once: true
+  copy:
+    src: /lib/systemd/system/syncthing@.service
+    dest: /etc/systemd/system/syncthing@.service
+    owner: root
+    group: root
+    mode: 0644
+  register: syncthing_service
+
+- name: Reload systemd
+  run_once: true
+  systemd:
+    daemon_reload: yes
+  when: syncthing_service.changed
+  become: yes
+
+- name: Start and enable syncthing
+  # throttle à 1 pour éviter d'avoir un double démarrage en même temps sur le même host et d'avoir les ports bloqués
+  throttle: 1
+  systemd:
+    name: syncthing@{{ ansible_user }}.service
+    state: started
+    enabled: yes
+  become: yes
+
+# - name: Install syncthing
+#   become: yes
+#   apt:
+#     name: ['syncthing']
+#     update_cache: yes
+#     force_apt_get: yes # should be fixed in future to remove "[WARNING]: Could not find aptitude. Using apt-get instead" 
+#     cache_valid_time: 3600 #only run if the last one is more than 1 hour
