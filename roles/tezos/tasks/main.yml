@@ -1,0 +1,127 @@
+---
+
+# Importer un snapshot
+##################################################"
+# d'abord réaliser un clear total des images docker
+# ./mainnet.sh stop
+# ./mainnet.sh clear
+# wget https://mainnet.xtz-shots.io/rolling -O tezos-mainnet.rolling
+# Ne pas démarrer le node, sinon l'arborescence déjà présente ne permettra pas l'import de snapshot
+# Puis bien noter le chemin absolu vers le fichier snapshot
+# ./mainnet.sh snapshot import /home/jeremie/tezos-mainnet.rolling
+# une fois importé, démarrer simplement tous l'outillage
+# ./mainnet.sh start
+
+
+# Créer un snapshot
+##################################################"
+# être synchro sur la blockchain
+# curl -fsSL 172.27.0.26:8732/chains/main/blocks/head~30/hash
+# récupérer le dernier block - 30
+# se connecter en shell par la commande ./mainnet.sh shell
+# réaliser l'export, même si le node est en cours d'exécution
+# tezos-node snapshot --block=BLbmW2AH7Gph9ueRX9ScY3DWgKXTMxH9Tx8VMyz2Vp6yiUHmE3R --data-dir /var/run/tezos/node/data export test.rolling --rolling
+# sortir de l'image docker le ficher rolling
+# docker cp mainnet_node_1:/home/tezos/test.rolling .
+
+##### SI AUCUNE CLEF LEDGER n'apparaît, export snapshot + import snapshot fonctionne
+##### : tester si c'est le clear qui permet de resync la clef ledger ?
+##### : ou si un delete du container docker du node suffit ?
+
+# Mettre à jour l'image docker (ex v9.5 > v9.7)
+##################################################"
+# replace all dans vim :%s/v9.5/v9.7/gc
+# ./mainnet.sh stop
+# ./mainnet.sh start
+
+# En cas de ledger débranchée/rebranchée
+##################################################"
+# ./mainnet.sh stop
+# ./mainnet.sh start
+# vérifier la bonne prise en compte avec un ./mainnet.sh client list connected ledgers
+
+
+# liste d'actions à réaliser
+##################################################"
+# wget du mainnet.sh
+# chmod + x du mainnet.sh
+# IMPORTANT : modifier le contenu pour mettre `privileged: true` sur chacun des parties suivantes :
+# - node
+# - baker-$proto
+# - endorser-$proto
+# - accuser-$proto
+##################################################"
+# installer les udev rules
+# wget https://raw.githubusercontent.com/LedgerHQ/udev-rules/master/add_udev_rules.sh
+# IMPORTANT : ajouter ,MODE="0666" à chaque ligne pour autoriser docker à accéder au périph usb
+# chmod +x add_udev_rules.sh
+# sudo ./add_udev_rules.sh
+# sudo udevadm trigger && sudo udevadm control --reload-rules
+#
+##################################################""
+# apt install libhidapi-libusb0 libev4 libffi7
+##################################################"
+# - debug: var=createuser
+# - debug:
+#     msg:
+#       - "Public key generated in .ssh/id_ed25519.pub :"
+#       - "{{ createuser.ssh_public_key }}"
+###################################################
+# ./mainnet.sh client list connected ledgers
+# => doit afficher au moins 4 lignes du type : 
+#   tezos-client import secret key ledger_tezos "ledger://devoted-ant-showy-bandicoot/bip25519/0h/0h"
+#   tezos-client import secret key ledger_tezos "ledger://devoted-ant-showy-bandicoot/ed25519/0h/0h"
+#   tezos-client import secret key ledger_tezos "ledger://devoted-ant-showy-bandicoot/secp256k1/0h/0h"
+#   tezos-client import secret key ledger_tezos "ledger://devoted-ant-showy-bandicoot/P-256/0h/0h"
+###################################################
+# Choisir la ligne ed25519 et executer la commande suivante pour ajouter la clef ledger
+# ./mainnet.sh client import secret key ma_ledger "ledger://devoted-ant-showy-bandicoot/ed25519/0h/0h"
+# VALIDER MANUELLEMENT sur la clef ledger l'adresse publique de baking tz1RG86Gssra...
+###################################################
+# Vérifier que la clef est bien enregistrée:
+# ./mainnet.sh client list known addresses
+# doit afficher ma_ledger: tz1RG86Gssra8y9CpQXQbThppLMiQmWSTHwv (ledger sk known)
+###################################################
+# Setter la plus haute valeur de watermark
+# ./mainnet.sh client set ledger high watermark for ma_ledger to 1569339
+# VALIDATER MANUELLEMENT sur la clef ledger
+# et check
+# ./mainnet.sh client get ledger high watermark for ma_ledger
+###################################################
+# setup de la clef pour baker
+# ./mainnet.sh client setup ledger to bake for ma_ledger
+# VALIDATER MANUELLEMENT sur la clef ledger
+###################################################
+# INUTILE A FAIRE : cette étape est faite seulement à la création d'un nouveau baker,
+# comme ça a déjà été fait, c'est donc inutile, mais je le note pour information
+# ./mainnet.sh client register key <ALIAS> as delegate
+###################################################
+# redémarrer tout avec les commandes suivantes
+# ./mainnet.sh stop
+# ./mainnet.sh start
+
+
+
+##############
+# version full proxmox, sans ledger connectée
+#######################
+# compare mainnet.sh
+# wget -O mainnet_wget.sh https://gitlab.com/tezos/tezos/raw/latest-release/scripts/tezos-docker-manager.sh
+# diff mainnet_wget.sh mainnet.sh
+################## user jeremie pour install docker
+# curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+# sudo apt-get update
+# sudo apt-get install docker-ce docker-ce-cli containerd.io
+# echo   "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu
+# $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+# ?
+# sudo chmod +x /usr/local/bin/docker-compose
+# sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+###########################
+# wget https://mainnet.xtz-shots.io/full -O tezos-mainnet.full
+# ./mainnet.sh stop
+# ./mainnet.sh clear
+# ./mainnet.sh snapshot import /home/tezos-user/tezos-mainnet.full
+# ./mainnet.sh start
+# ./mainnet.sh import secret .... (voir carte sd E610 pour l'install manuel de la clef privée héritée de la ledger)
+

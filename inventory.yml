@@ -1,0 +1,11 @@
+# inventory
+#[all:vars]
+#ssh_private_key_file=~/.ssh/id_ed25519_sk_rk_principale_Y1
+---
+laptops:
+  hosts:
+    laptop:
+      ansible_host: localhost
+      ansible_connection: local
+      #ansible_user: "{{ lookup('env', 'MY_SECRET_ANSIBLE_USER') }}"
+

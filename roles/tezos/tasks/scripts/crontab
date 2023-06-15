@@ -1,0 +1,2 @@
+*/5 * * * * /home/tezos-user/checkPeers.sh >>/home/tezos-user/log/checkPeers.log
+* * * * * /home/tezos-user/healthCheckSynchronization.sh >> /home/tezos-user/log/health-check.log 2>&1

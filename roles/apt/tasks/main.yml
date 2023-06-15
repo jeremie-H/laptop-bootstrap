@@ -1,0 +1,44 @@
+---
+- name: Run the equivalent of "apt-get update" and install all packages dependances
+  become: yes
+  # throttle à 1 pour éviter d'exécuter en parallèle une tâche apt qui cré un lock (exécution avec 2 users différents par exemple)
+  run_once: true
+  apt:
+    name: "{{ apt_packages }}"
+    update_cache: yes
+    cache_valid_time: 3600 #only run if the last one is more than 1 hour
+
+- name: Upgrade all packages to the latest version
+  become: yes
+  run_once: true
+  apt:
+    name: "*"
+    state: latest
+    cache_valid_time: 3600 #only run if the last one is more than 1 hour
+
+- name: Run the `apt autoremove autoclean`
+  become: yes
+  run_once: true
+  apt:
+    autoremove: yes
+    autoclean: yes
+
+#- name: Install snap packages
+#  become: yes
+#  run_once: true
+#  when: (snap_packages is defined) and (snap_packages[0] is defined)
+#  snap:
+#    name: "{{ snap_packages }}"
+#    state: present
+#    #attention, avec le mode classic : yes, on ne peut pas mettre une liste de package
+#    classic: yes
+
+#- name: Remove snap packages
+#  become: yes
+#  run_once: true
+#  when: (snap_packages_to_remove is defined) and (snap_packages_to_remove[0] is defined)
+#  snap:
+#    name: "{{ snap_packages_to_remove }}"
+#    state: absent
+#    #attention, avec le mode classic : yes, on ne peut pas mettre une liste de package
+#    classic: yes

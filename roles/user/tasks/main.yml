@@ -1,0 +1,24 @@
+---
+
+- name: Make sure users are created
+  become: yes
+  user:
+    name: "{{ item.username }}"
+    groups: docker
+    append: true # add to group without remove from others groups
+    comment: "{{ unix_comment }}"
+    create_home: true
+    state: present
+    generate_ssh_key: yes
+    ssh_key_type: ed25519
+    ssh_key_file: .ssh/id_ed25519
+    ssh_key_comment: "{{ item.username }}@{{ group_names[0] }}"
+  register: createuser
+  with_items: '{{ users }}'
+
+
+# - debug: var=createuser
+# - debug:
+#     msg:
+#       - "Public key generated in .ssh/id_ed25519.pub :"
+#       - "{{ createuser.ssh_public_key }}"

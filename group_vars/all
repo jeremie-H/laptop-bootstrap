@@ -1,0 +1,13 @@
+---
+# user in unix system
+unix_user: "{{ ansible_user }}"
+user_path: "/home/{{ unix_user }}"
+unix_comment: Jérémie
+
+ansible_python_interpreter: /usr/bin/python3
+# Default theme
+oh_my_zsh_theme: agnoster
+
+# Default plugins
+oh_my_zsh_plugins:
+  - git
