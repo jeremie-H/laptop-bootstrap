@@ -1,0 +1,35 @@
+---
+# Configure Git with user information
+- name: Configure Git user name
+  become: yes
+  become_user: "{{ unix_user }}"
+  git_config:
+    name: user.name
+    scope: global
+    value: "{{ full_name }}"
+  when: full_name is defined
+
+- name: Configure Git user email
+  become: yes
+  become_user: "{{ unix_user }}"
+  git_config:
+    name: user.email
+    scope: global
+    value: "{{ git_email }}"
+  when: git_email is defined
+
+- name: Configure Git default branch name
+  become: yes
+  become_user: "{{ unix_user }}"
+  git_config:
+    name: init.defaultBranch
+    scope: global
+    value: main
+
+- name: Configure Git to use credential helper
+  become: yes
+  become_user: "{{ unix_user }}"
+  git_config:
+    name: credential.helper
+    scope: global
+    value: cache --timeout=3600

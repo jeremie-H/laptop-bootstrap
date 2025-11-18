@@ -1,0 +1,21 @@
+---
+- name: write swappiness config file
+  become: yes
+  template:
+    src: templates/swappiness.conf.j2
+    dest: /etc/sysctl.d/99-swappiness.conf
+    mode: 0644
+
+- name: get swappiness value
+  become: yes
+  command: cat /proc/sys/vm/swappiness
+  register: actual_swappiness
+  changed_when: false  # Only to avoid displaying "changed: [localhost]" when nothing is modified
+
+- name: set swappiness value to {{ swappiness }}
+  become: yes
+  command: "sysctl vm.swappiness={{ swappiness }}"
+  when: actual_swappiness.stdout|int != swappiness|int
+  notify:
+    - swapoff
+    - swapon

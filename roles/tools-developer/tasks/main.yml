@@ -1,0 +1,111 @@
+---
+- name: Create the directory \"outils\" if it does not exist
+  become: yes
+  become_user: "{{ unix_user }}"
+  ansible.builtin.file:
+    path: "{{ user_path }}/outils"
+    state: directory
+    mode: '0750'
+
+- name: Ensure we have all envvars in .ansible.zsh
+  become: yes
+  become_user: "{{ unix_user }}"
+  blockinfile:
+    path: "{{ user_path }}/.ansible.zsh"
+    marker: "################# {mark} ANSIBLE MANAGED #################"
+    create: true
+    block: |
+      # See http://www.shellperson.net/using-sudo-with-an-alias/
+      alias sudo='sudo '
+      alias watch='watch '
+      
+      #monitor docker containers
+      alias dockstats='docker ps | awk '\''{print $NF}'\'' | grep -v NAMES |xargs docker stats'
+      
+      #dusort est utilisable uniquement sur zsh
+      alias dusort="du -sch *(D) | sort -h"
+      alias dusort2="du -chd2 *(D) | sort -h"
+      alias dusort3="du -chd3 *(D) | sort -h"
+
+      # Volta is used to manage nodeJS installation
+      export VOLTA_HOME="$HOME/.volta"
+      export PATH="$VOLTA_HOME/bin:$PATH"
+      
+      # aliases for git push without starting CICD on gitlab
+      alias gprse='git push -o "ci.skip"'
+      alias gpfrse='git push --force-with-lease -o "ci.skip"'
+
+      # alias for debugging with kubernetes
+      alias kdebug='kubectl exec -it debuggery -- zsh || kubectl run --rm -it debuggery --image=rameezk/debuggery --restart=Never'
+      alias k="kubectl "
+
+      # fzf installation
+      [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+      alias preview="fzf --preview 'bat --color=always {}'"
+      alias pv="fzf --preview 'bat --color=always {}'"
+      # add support for ctrl+o to open selected file in VS Code
+      export FZF_DEFAULT_OPTS="--bind='ctrl-o:execute(code {})+abort'"
+
+
+## Install Volta manager for NodeJS
+# WARNING: Downloading and executing scripts from the internet without checksum verification
+# is a security risk. Consider using a specific version or implementing checksum validation.
+- name: Download Volta installer for NodeJS installation management
+  become: yes
+  become_user: "{{ unix_user }}"
+  get_url:
+    url: https://get.volta.sh
+    dest: /tmp/volta-installer.sh
+    mode: 0755
+    force_basic_auth: false
+    validate_certs: true
+
+- name: Execute volta.sh
+  become: yes
+  become_user: "{{ unix_user }}"
+  shell: ./volta-installer.sh --skip-setup
+  args:
+    chdir: /tmp/
+    creates: "{{ user_path }}/.volta"
+
+- name: volta completions
+  become: yes
+  become_user: "{{ unix_user }}"
+  shell: ./volta completions zsh > {{ user_path }}/.oh-my-zsh/completions/_volta
+  args:
+    chdir: "{{ user_path }}/.volta/bin"
+    creates: "{{ user_path }}/.oh-my-zsh/completions/_volta"
+
+- name: volta reset zsh completion
+  become: yes
+  become_user: "{{ unix_user }}"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  with_fileglob:
+    - "{{ user_path }}/.zcompdump*"
+
+- name: Install a NodeJS LTS with Volta
+  become: yes
+  become_user: "{{ unix_user }}"
+  shell: ./volta install node
+  args:
+    chdir: "{{ user_path }}/.volta/bin"
+    creates: "{{ user_path }}/.volta/tools/inventory/node/node*"
+
+- name: Clone fzf repository
+  become_user: "{{ unix_user }}"
+  git:
+    repo: https://github.com/junegunn/fzf.git
+    dest: "{{ user_path }}/outils/fzf"
+    depth: 1
+  register: cloning_fzf
+
+- name: Install fzf
+  become_user: "{{ unix_user }}"
+  # like ./install all but without modifying .zshrc
+  shell: ./install --completion --key-bindings --no-bash --no-fish --no-update-rc
+  args:
+    chdir: "{{ user_path }}/outils/fzf"
+    creates: "{{ user_path }}/.fzf.zsh"
+  when: cloning_fzf is success

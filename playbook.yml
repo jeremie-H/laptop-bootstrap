@@ -1,0 +1,18 @@
+---
+- hosts: laptops
+  become: true
+  roles:
+    # System configuration
+    - { role: swap, tags: swap }
+
+    # Development tools and environment
+    - { role: git, tags: git }
+    - { role: oh-my-zsh, tags: oh-my-zsh }
+    - { role: tools-developer, tags: tools-developer }
+
+    # Optional roles (uncomment to enable)
+    # - { role: apt, tags: apt }
+    # - { role: gnome, tags: gnome }
+    # - { role: docker, tags: docker }
+    # - { role: syncthing, tags: syncthing }
+    # - { role: zfs, tags: zfs }

@@ -1,0 +1,82 @@
+---
+# yamllint configuration
+# See https://yamllint.readthedocs.io/
+
+extends: default
+
+rules:
+  # Line length
+  line-length:
+    max: 120
+    level: warning
+
+  # Indentation
+  indentation:
+    spaces: 2
+    indent-sequences: true
+    check-multi-line-strings: false
+
+  # Comments
+  comments:
+    min-spaces-from-content: 1
+    require-starting-space: true
+    ignore-shebangs: true
+
+  # Trailing spaces
+  trailing-spaces: enable
+
+  # Empty lines
+  empty-lines:
+    max: 2
+    max-start: 0
+    max-end: 1
+
+  # Bracket spacing
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 0
+    min-spaces-inside-empty: 0
+    max-spaces-inside-empty: 0
+
+  # Brace spacing
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+    min-spaces-inside-empty: 0
+    max-spaces-inside-empty: 0
+
+  # Colons
+  colons:
+    max-spaces-before: 0
+    max-spaces-after: 1
+
+  # Commas
+  commas:
+    max-spaces-before: 0
+    min-spaces-after: 1
+    max-spaces-after: 1
+
+  # Document start
+  document-start:
+    present: true
+    level: warning
+
+  # Truthy values
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no']
+    check-keys: false
+
+  # Key ordering
+  key-ordering: disable
+
+  # Quoted strings
+  quoted-strings:
+    quote-type: any
+    required: false
+
+# Ignore specific files or paths
+ignore: |
+  .cache/
+  .git/
+  venv/
+  roles/tezos/tasks/scripts/

@@ -1,0 +1,251 @@
+---
+
+- name: Install all packages dependances for gnome customization
+  become: yes
+  # Throttle to 1 to avoid parallel execution of apt task which creates a lock (e.g. execution with 2 different users)
+  run_once: true
+  ansible.builtin.apt:
+    pkg:
+      - gnome-shell-extension-dashtodock
+      - gnome-shell-extension-appindicator
+    update_cache: yes
+    cache_valid_time: 3600  # only run if the last one is more than 1 hour
+
+- name: Install psutil
+  become: yes
+  run_once: true
+  pip:
+    name:
+      - psutil
+
+- debug:
+    msg:
+      - "unix_user : {{ unix_user }}"
+
+#- name: Enable gnome-shell extensions (available after restarting)
+#  dconf:
+#    key: "/org/gnome/shell/enabled-extensions"
+#    value:
+#      - user-theme@gnome-shell-extensions.gcampax.github.com
+#      - desktop-icons@csoriano
+#      - ubuntu-appindicators@ubuntu.com
+#      - ubuntu-dock@ubuntu.com
+#      - system-monitor@paradoxxx.zero.gmail.com
+
+
+- name: "[dconf] enable dashtodock (need a session restart)"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/enabled-extensions"
+    value:
+      - "dash-to-dock@micxgx.gmail.com"
+      - "apps-menu@gnome-shell-extensions.gcampax.github.com"
+      - "ubuntu-appindicators@ubuntu.com"
+      - "workspace-indicator@gnome-shell-extensions.gcampax.github.com"
+      - "horizontal-workspaces@gnome-shell-extensions.gcampax.github.com"
+    state: present
+
+- name: "[dconf] Show battery percentage"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/desktop/interface/show-battery-percentage"
+    value: "true"
+    state: present
+  when: pc_portable is defined and pc_portable
+
+- name: "[dconf] Screen black after 15 minutes"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/desktop/session/idle-delay"
+    value: "uint32 900"
+    state: present
+  when: pc_portable is defined and pc_portable
+
+- name: "[dconf] Touchpad right/middle click emulation by area"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/desktop/peripherals/touchpad/click-method"
+    value: "'areas'"
+    state: present
+  when: pc_portable is defined and pc_portable
+
+## Common dconf settings
+- name: "[dconf] Show weekday in clock"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/desktop/interface/clock-show-weekday"
+    value: "true"
+    state: present
+
+- name: "[dconf] Workspaces on all displays"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/mutter/workspaces-only-on-primary"
+    value: "false"
+    state: present
+
+- name: "[dconf] Enable hot corners"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/desktop/interface/enable-hot-corners"
+    value: "true"
+    state: present
+
+- name: "[dconf] boutons minimiser, maximiser, fermer"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/desktop/wm/preferences/button-layout"
+    value: "'appmenu:minimize,maximize,close'"
+    state: present
+
+- name: "[dconf] switch alt+² isolé sur les workspaces"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/app-switcher/current-workspace-only"
+    value: "true"
+    state: present
+
+
+#- name: "[dconf] cacher la corbeille sur le bureau"
+#  become: yes
+#  become_user: "{{ unix_user }}"
+#  dconf:
+#    key: "/org/gnome/shell/extensions/desktop-icons/show-trash"
+#    value: "false"
+#    state: present
+
+#- name: "[dconf] cacher le home sur le bureau"
+#  become: yes
+#  become_user: "{{ unix_user }}"
+#  dconf:
+#    key: "/org/gnome/shell/extensions/desktop-icons/show-home"
+#    value: "false"
+#    state: present
+
+## dash to dock
+
+- name: "[dconf] Dock sur tous les écrans"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/dash-to-dock/multi-monitor"
+    value: "true"
+    state: present
+    
+- name: "[dconf] dash-to-dock | masquer automatiquement le Dock (si recouvert)"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/dash-to-dock/dock-fixed"
+    value: "false"
+    state: present
+
+- name: "[dconf] dash-to-dock | masquage intelligent, seulement la fenêtre de l'application active"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/dash-to-dock/intellihide"
+    value: "true"
+    state: present
+
+- name: "[dconf] dash-to-dock | Applications isolées sur les workspaces"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/dash-to-dock/isolate-workspaces"
+    value: "true"
+    state: present
+
+- name: "[dconf] dash-to-dock | Réduit les marges pour gagner de la place"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/dash-to-dock/custom-theme-shrink"
+    value: "true"
+    state: present
+
+- name: "[dconf] dash-to-dock | Affiche des points pour les apps running"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/dash-to-dock/running-indicator-style"
+    value: "'DOTS'"
+    state: present
+
+- name: "[dconf] dash-to-dock | Opacité du dock dynamique"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/dash-to-dock/transparency-mode"
+    value: "'DYNAMIC'"
+    state: present
+
+- name: "[dconf] dash-to-dock | Opacité dynamique activée"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/dash-to-dock/customize-alphas"
+    value: "true"
+    state: present
+
+- name: "[dconf] dash-to-dock | Opacité dynamique maximum"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/dash-to-dock/max-alpha"
+    value: "0.80000000000000004"
+    state: present
+
+- name: "[dconf] dash-to-dock | Opacité dynamique minimum"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/dash-to-dock/min-alpha"
+    value: "0.14999999999999999"
+    state: present
+
+- name: "[dconf] dash-to-dock | Cacher la poubelle du menu"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/dash-to-dock/show-trash"
+    value: "false"
+    state: present
+
+- name: "[dconf] dash-to-dock | Affiche le menu sur moniteur secondaire 2"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/extensions/dash-to-dock/preferred-monitor"
+    value: "2"
+    state: present
+
+- name: "[dconf] dash-to-dock | Change les favoris du menu"
+  become: yes
+  become_user: "{{ unix_user }}"
+  dconf:
+    key: "/org/gnome/shell/favorite-apps"
+    value:
+      - org.gnome.Nautilus.desktop
+      - firefox-esr.desktop
+      - chromium.desktop
+      - gnome-control-center.desktop
+      - gnome-system-monitor.desktop
+      - libreoffice-writer.desktop
+      - org.gnome.Terminal.desktop
+#      - org.gnome.Evolution.desktop
+#      - rhythmbox.desktop
+#      - org.gnome.Software.desktop
+#      - yelp.desktop
+    state: present
+
+
