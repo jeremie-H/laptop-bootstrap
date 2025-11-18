@@ -5,8 +5,8 @@
     pkg:
       - zsh
       - git
-    state: latest
-    force_apt_get: yes # should be fixed in future to remove "[WARNING]: Could not find aptitude. Using apt-get instead" 
+    state: present
+    force_apt_get: yes # should be fixed in future to remove "[WARNING]: Could not find aptitude. Using apt-get instead"
   register: installation
 
 - name: "write first ~/.zshrc for if it doesnt exist"
@@ -79,22 +79,26 @@
     - Bold
     - Italic
     - Bold Italic
+  register: font_download
 
 - name: update font-cache
   become: yes
   become_user: "{{ unix_user }}"
   command: fc-cache -fv
+  when: font_download is changed
+  changed_when: false
 
 ## gnome-terminal
 
-# impossible de récupérer la valeur de /org/gnome/terminal/legacy/profiles:/default avec dconf
-# on utilise alors gsettings (mystère de gnome)
+# Unable to retrieve /org/gnome/terminal/legacy/profiles:/default value with dconf
+# Using gsettings instead (gnome mystery)
 - name: "[gsettings] retrieve Default profile ID in Gnome Terminal"
   become: yes
   become_user: "{{ unix_user }}"
   command: "gsettings get org.gnome.Terminal.ProfilesList default"
   register: default_gnome_terminal_profile_id
   when: gnome_active is defined and gnome_active
+  changed_when: false
 
 # strip simple quote from previous result, like 'b1dcc9dd-5262-4d8d-a863-c897e6d979b9'
 - name: "strip quote from variable default_gnome_terminal_profile_id"

@@ -12,7 +12,7 @@
     - ssh
 
 - name: Remove the public key in the '{{ ssh_known_hosts_file }}'
-  become_user: yr78652
+  become_user: "{{ unix_user }}"
   known_hosts:
     name: "{{ item.item }}"
     state: "absent"
@@ -22,7 +22,7 @@
     - ssh
 
 - name: Add/update the public key in the '{{ ssh_known_hosts_file }}'
-  become_user: yr78652
+  become_user: "{{ unix_user }}"
   known_hosts:
     name: "{{ item.item }}"
     key: "{{ item.stdout }}"
@@ -32,10 +32,13 @@
   tags:
     - ssh
 
+# WARNING: Using password-based SSH authentication is insecure
+# Consider using SSH keys instead by setting up authorized_keys manually
 - name: For each host, ssh-copy-id my ssh public keys to the host
-  become_user: yr78652
+  become_user: "{{ unix_user }}"
   shell: "sshpass -p {{ ansible_ssh_pass }} ssh-copy-id {{ item }}"
   with_items: "{{ ssh_known_hosts }}"
   when: not (( ansible_ssh_pass is undefined ) or ( ansible_ssh_pass is none ) or ( ansible_ssh_pass | trim == ''))
+  no_log: true  # Don't log commands containing passwords
   tags:
     - sshcopy

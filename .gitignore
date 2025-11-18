@@ -1,0 +1,66 @@
+# Ansible
+*.retry
+.ansible/
+.cache/
+ansible.log
+
+# Ansible fact cache
+/tmp/ansible_facts/
+
+# Python
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# OS
+Thumbs.db
+.DS_Store
+._*
+
+# Logs
+*.log
+/tmp/
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+
+# Secrets and sensitive data
+*.pem
+*.key
+*.crt
+.env
+secrets.yml
+vault-password.txt
+
+# Test output
+.tox/
+.pytest_cache/
+htmlcov/
+.coverage
+*.cover
+
+# Documentation build
+_build/
+docs/_build/
+
+# Galaxy
+*.tar.gz

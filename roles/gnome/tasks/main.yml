@@ -2,14 +2,14 @@
 
 - name: Install all packages dependances for gnome customization
   become: yes
-  # throttle à 1 pour éviter d'exécuter en parallèle une tâche apt qui cré un lock (exécution avec 2 users différents par exemple)
+  # Throttle to 1 to avoid parallel execution of apt task which creates a lock (e.g. execution with 2 different users)
   run_once: true
   ansible.builtin.apt:
     pkg:
       - gnome-shell-extension-dashtodock
       - gnome-shell-extension-appindicator
     update_cache: yes
-    cache_valid_time: 3600 #only run if the last one is more than 1 hour
+    cache_valid_time: 3600  # only run if the last one is more than 1 hour
 
 - name: Install psutil
   become: yes
@@ -46,7 +46,7 @@
       - "horizontal-workspaces@gnome-shell-extensions.gcampax.github.com"
     state: present
 
-- name: "[dconf] pourcentage batterie"
+- name: "[dconf] Show battery percentage"
   become: yes
   become_user: "{{ unix_user }}"
   dconf:
@@ -55,7 +55,7 @@
     state: present
   when: pc_portable is defined and pc_portable
 
-- name: "[dconf] écran noir au bout de 15min"
+- name: "[dconf] Screen black after 15 minutes"
   become: yes
   become_user: "{{ unix_user }}"
   dconf:
@@ -63,16 +63,8 @@
     value: "uint32 900"
     state: present
   when: pc_portable is defined and pc_portable
-  
-- name: "[dconf] pourcentage batterie"
-  become: yes
-  become_user: "{{ unix_user }}"
-  dconf:
-    key: "/org/gnome/desktop/interface/show-battery-percentage"
-    value: "true"
-    state: present
-  when: pc_portable is defined and pc_portable
-- name: "[dconf] émulation du clic de souris droit/milieu selon la surface"
+
+- name: "[dconf] Touchpad right/middle click emulation by area"
   become: yes
   become_user: "{{ unix_user }}"
   dconf:
@@ -81,8 +73,8 @@
     state: present
   when: pc_portable is defined and pc_portable
 
-## dconf commun  
-- name: "[dconf] Affichage jour de la semaine"
+## Common dconf settings
+- name: "[dconf] Show weekday in clock"
   become: yes
   become_user: "{{ unix_user }}"
   dconf:
@@ -90,7 +82,7 @@
     value: "true"
     state: present
 
-- name: "[dconf] workspace sur tous les écrans"
+- name: "[dconf] Workspaces on all displays"
   become: yes
   become_user: "{{ unix_user }}"
   dconf:
@@ -98,7 +90,7 @@
     value: "false"
     state: present
 
-- name: "[dconf] hot corner activé"
+- name: "[dconf] Enable hot corners"
   become: yes
   become_user: "{{ unix_user }}"
   dconf:

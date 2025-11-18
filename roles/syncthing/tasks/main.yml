@@ -14,19 +14,28 @@
   register: result
   until: result is succeeded
 
-- name: Import Syncthing GPG key to apt
+- name: Create keyrings directory
   run_once: true
-  apt_key:
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Syncthing GPG key
+  run_once: true
+  get_url:
     url: "{{ syncthing_apt_key_url }}"
-    state: present
+    dest: /etc/apt/keyrings/syncthing-archive-keyring.asc
+    mode: '0644'
   register: result
   until: result is succeeded
 
 - name: Add Syncthing repository
   run_once: true
   apt_repository:
-    repo: 'deb {{ syncthing_apt_repository_url }} syncthing stable'
+    repo: 'deb [signed-by=/etc/apt/keyrings/syncthing-archive-keyring.asc] {{ syncthing_apt_repository_url }} syncthing stable'
     state: present
+    filename: syncthing
 
 - name: Install Syncthing from Syncthing repository
   run_once: true
@@ -69,7 +78,7 @@
   become: yes
 
 - name: Start and enable syncthing
-  # throttle à 1 pour éviter d'avoir un double démarrage en même temps sur le même host et d'avoir les ports bloqués
+  # Throttle to 1 to avoid double startup at the same time on the same host and port conflicts
   throttle: 1
   systemd:
     name: syncthing@{{ ansible_user }}.service
@@ -82,5 +91,5 @@
 #   apt:
 #     name: ['syncthing']
 #     update_cache: yes
-#     force_apt_get: yes # should be fixed in future to remove "[WARNING]: Could not find aptitude. Using apt-get instead" 
-#     cache_valid_time: 3600 #only run if the last one is more than 1 hour
+#     force_apt_get: yes # should be fixed in future to remove "[WARNING]: Could not find aptitude. Using apt-get instead"
+#     cache_valid_time: 3600 # only run if the last one is more than 1 hour

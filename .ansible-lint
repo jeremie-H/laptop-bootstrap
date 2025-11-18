@@ -1,0 +1,74 @@
+---
+# Ansible Lint Configuration
+# See https://ansible-lint.readthedocs.io/
+
+profile: production  # Use production profile for stricter rules
+
+# Exclude specific paths
+exclude_paths:
+  - .cache/
+  - .git/
+  - .github/
+  - roles/tezos/tasks/scripts/  # Bash scripts, not Ansible
+  - venv/
+  - '*.retry'
+
+# Enable offline mode (no need to fetch dependencies)
+offline: false
+
+# Skip specific rules
+skip_list:
+  - role-name  # Allow custom role names
+  - galaxy[no-changelog]  # We don't need CHANGELOG.rst for private roles
+  - galaxy[version-incorrect]  # Allow flexible versioning
+
+# Enforce specific rules more strictly
+warn_list: []
+
+# Use tags to control which rules to run
+# tags: []
+
+# Use skip tags to skip specific rules by tag
+# skip_tags: []
+
+# Enable/disable specific rules
+# See full list: https://ansible-lint.readthedocs.io/rules/
+enable_list:
+  - args
+  - empty-string-compare
+  - no-log-password
+  - no-same-owner
+  - name[prefix]
+  - yaml
+
+# Configure specific rules
+rules:
+  # Enforce task naming convention
+  name[casing]:
+    min-name-length: 3
+
+  # Configure command-instead-of-shell rule
+  command-instead-of-shell:
+    enabled: true
+
+  # Configure line-length
+  yaml[line-length]:
+    max: 120
+    level: warning
+
+# Kinds of files to lint
+kinds:
+  - yaml: "**/*.{yaml,yml}"
+  - playbook: "**/*playbook*.{yml,yaml}"
+  - tasks: "**/tasks/**/*.{yml,yaml}"
+  - handlers: "**/handlers/**/*.{yml,yaml}"
+  - vars: "**/vars/**/*.{yml,yaml}"
+  - defaults: "**/defaults/**/*.{yml,yaml}"
+  - meta: "**/meta/**/*.{yml,yaml}"
+
+# Mock modules or roles you don't have installed
+mock_modules: []
+mock_roles: []
+
+# Verbosity level
+verbosity: 1

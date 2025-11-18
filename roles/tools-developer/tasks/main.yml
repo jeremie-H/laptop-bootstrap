@@ -48,6 +48,8 @@
 
 
 ## Install Volta manager for NodeJS
+# WARNING: Downloading and executing scripts from the internet without checksum verification
+# is a security risk. Consider using a specific version or implementing checksum validation.
 - name: Download Volta installer for NodeJS installation management
   become: yes
   become_user: "{{ unix_user }}"
@@ -55,6 +57,8 @@
     url: https://get.volta.sh
     dest: /tmp/volta-installer.sh
     mode: 0755
+    force_basic_auth: false
+    validate_certs: true
 
 - name: Execute volta.sh
   become: yes
@@ -75,11 +79,11 @@
 - name: volta reset zsh completion
   become: yes
   become_user: "{{ unix_user }}"
-  shell: rm "{{ user_path }}/.zcompdump*"
-  failed_when: false
-  args:
-    chdir: "{{ user_path }}/.volta/bin"
-    removes: "{{ user_path }}/.zcompdump*"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  with_fileglob:
+    - "{{ user_path }}/.zcompdump*"
 
 - name: Install a NodeJS LTS with Volta
   become: yes

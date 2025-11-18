@@ -1,25 +1,18 @@
+---
 - hosts: laptops
   become: true
-  #become_method: enable
   roles:
-    #- { role: apt , tags: apt }
-    #- { role: gnome , tags: gnome }
-    - { role: oh-my-zsh , tags: oh-my-zsh }
-    - { role: swap , tags: swap }
-    - { role: tools-developer , tags: tools-developer }
-#    - { role: docker , tags: docker }
+    # System configuration
+    - { role: swap, tags: swap }
 
+    # Development tools and environment
+    - { role: git, tags: git }
+    - { role: oh-my-zsh, tags: oh-my-zsh }
+    - { role: tools-developer, tags: tools-developer }
 
-#    - { role: git , tags: git }
-#    - { role: syncthing , tags: syncthing }
-
-
-#    - { role: ubuntu , tags: ubuntu }
-
-#    - { role: firefox , tags: firefox }
-#    - { role: terminator , tags: terminator }
-#    - { role: misc , tags: misc }
-#    - { role: zsh , tags: zsh }
-#    - oh-my-zsh
-#    - { role: i3 , tags: i3 }
-#    - rofi
+    # Optional roles (uncomment to enable)
+    # - { role: apt, tags: apt }
+    # - { role: gnome, tags: gnome }
+    # - { role: docker, tags: docker }
+    # - { role: syncthing, tags: syncthing }
+    # - { role: zfs, tags: zfs }
